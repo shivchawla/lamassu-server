@@ -40,3 +40,9 @@ terraform.*
 .terraform
 
 db.json
+certs - o/
+public_v7.5.1/
+public_org/
+public/static/media/zodiac.fa553e28.svg
+public/
+openssl
