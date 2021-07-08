@@ -8,7 +8,7 @@
   "dependencies": {
     "@fczbkk/uuid4": "^3.0.0",
     "apollo-server-express": "^2.9.14",
-    "axios": "^0.16.1",
+    "axios": "^0.16.2",
     "base-x": "^3.0.2",
     "bchaddrjs": "^0.3.0",
     "bignumber.js": "^4.1.0",
@@ -52,6 +52,7 @@
     "migrate": "^1.6.2",
     "minimist": "^1.2.0",
     "moment": "^2.17.0",
+    "moment-timezone": "^0.5.33",
     "morgan": "^1.8.2",
     "nan": "^2.14.0",
     "nano-markdown": "^1.2.0",
