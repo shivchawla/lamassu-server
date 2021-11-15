@@ -57,7 +57,7 @@ print_error () {
     -key $CA_KEY_PATH \
     -days 3560 \
     -out $CA_PATH \
-    -subj "/C=IS/ST=/L=Reykjavik/O=Lamassu Operator CA/CN=lamassu-operator.is" \
+    -subj "/C=IS/L=Reykjavik/O=Lamassu Operator CA/CN=lamassu-operator.is" \
     >> $LOG_FILE 2>&1
 } || { print_error "openssl req with CA_KEY_PATH failed" "$OPENSSL_ERROR_HINT"; exit 1; }
 
@@ -71,7 +71,7 @@ print_error () {
   openssl req -new \
     -key $SERVER_KEY_PATH \
     -out /tmp/Lamassu_OP.csr.pem \
-    -subj "/C=IS/ST=/L=Reykjavik/O=Lamassu Operator/CN=$DOMAIN" \
+    -subj "/C=IS/L=Reykjavik/O=Lamassu Operator/CN=$DOMAIN" \
     >> $LOG_FILE 2>&1
 } || { print_error "openssl req with SERVER_KEY_PATH failed" "$OPENSSL_ERROR_HINT"; exit 1; }
 
