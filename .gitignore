@@ -40,3 +40,8 @@ terraform.*
 .terraform
 
 db.json
+certs - o/
+public_dev/
+public_org/
+public/
+openssl
