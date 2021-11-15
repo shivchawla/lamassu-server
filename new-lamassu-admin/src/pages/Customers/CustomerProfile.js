@@ -16,13 +16,16 @@ import { ReactComponent as AuthorizeReversedIcon } from 'src/styling/icons/butto
 import { ReactComponent as AuthorizeIcon } from 'src/styling/icons/button/authorize/zodiac.svg'
 import { ReactComponent as BlockReversedIcon } from 'src/styling/icons/button/block/white.svg'
 import { ReactComponent as BlockIcon } from 'src/styling/icons/button/block/zodiac.svg'
+import { ReactComponent as DiscountReversedIcon } from 'src/styling/icons/button/discount/white.svg'
+import { ReactComponent as Discount } from 'src/styling/icons/button/discount/zodiac.svg'
 import { fromNamespace, namespaces } from 'src/utils/config'
 
+import CustomerData from './CustomerData'
 import styles from './CustomerProfile.styles'
 import {
   CustomerDetails,
   TransactionsList,
-  ComplianceDetails
+  CustomerSidebar
 } from './components'
 import { getFormattedPhone, getName } from './helper'
 
@@ -35,6 +38,7 @@ const GET_CUSTOMER = gql`
       id
       authorizedOverride
       frontCameraPath
+      frontCameraAt
       frontCameraOverride
       phone
       isAnonymous
@@ -56,6 +60,7 @@ const GET_CUSTOMER = gql`
       lastTxFiatCode
       lastTxClass
       daysSuspended
+      isSuspended
       transactions {
         txClass
         id
@@ -66,6 +71,8 @@ const GET_CUSTOMER = gql`
         created
         errorMessage: error
         error: errorCode
+        txCustomerPhotoAt
+        txCustomerPhotoPath
       }
     }
   }
@@ -96,14 +103,15 @@ const SET_CUSTOMER = gql`
       lastTxFiat
       lastTxFiatCode
       lastTxClass
+      subscriberInfo
     }
   }
 `
 
 const CustomerProfile = memo(() => {
-  const classes = useStyles()
   const history = useHistory()
   const [showCompliance, setShowCompliance] = useState(false)
+  const [clickedItem, setClickedItem] = useState('overview')
   const { id: customerId } = useParams()
 
   const { data: customerResponse, refetch: getCustomer, loading } = useQuery(
@@ -125,6 +133,8 @@ const CustomerProfile = memo(() => {
       }
     })
 
+  const onClickSidebarItem = code => setClickedItem(code)
+
   const configData = R.path(['config'])(customerResponse) ?? []
   const locale = configData && fromNamespace(namespaces.LOCALE, configData)
   const customerData = R.path(['customer'])(customerResponse) ?? []
@@ -136,7 +146,11 @@ const CustomerProfile = memo(() => {
   const blocked =
     R.path(['authorizedOverride'])(customerData) === OVERRIDE_REJECTED
 
-  const suspended = R.gt(R.path(['daysSuspended'])(customerData), 0)
+  const isSuspended = customerData.isSuspended
+  const isCustomerData = clickedItem === 'customerData'
+  const isOverview = clickedItem === 'overview'
+
+  const classes = useStyles({ blocked })
 
   return (
     <>
@@ -159,27 +173,33 @@ const CustomerProfile = memo(() => {
               )}
         </Label2>
       </Breadcrumbs>
-      <div>
-        <Box
-          className={classes.customerDetails}
-          display="flex"
-          justifyContent="space-between">
-          <CustomerDetails
-            customer={customerData}
-            locale={locale}
-            setShowCompliance={() => setShowCompliance(!showCompliance)}
-          />
+      <div className={classes.panels}>
+        <div className={classes.leftSidePanel}>
           {!loading && !customerData.isAnonymous && (
             <div>
+              <div>
+                <CustomerSidebar
+                  isSelected={code => code === clickedItem}
+                  onClick={onClickSidebarItem}
+                />
+              </div>
               <Label1 className={classes.actionLabel}>Actions</Label1>
-              <div className={classes.customerActions}>
-                {suspended && (
+              <div>
+                <ActionButton
+                  className={classes.customerDiscount}
+                  color="primary"
+                  Icon={Discount}
+                  InverseIcon={DiscountReversedIcon}
+                  onClick={() => {}}>
+                  {`Add individual discount`}
+                </ActionButton>
+              </div>
+              <div>
+                {isSuspended && (
                   <ActionButton
                     color="primary"
-                    Icon={suspended ? AuthorizeIcon : BlockIcon}
-                    InverseIcon={
-                      suspended ? AuthorizeReversedIcon : BlockReversedIcon
-                    }
+                    Icon={AuthorizeIcon}
+                    InverseIcon={AuthorizeReversedIcon}
                     onClick={() =>
                       updateCustomer({
                         suspendedUntil: null
@@ -190,6 +210,7 @@ const CustomerProfile = memo(() => {
                 )}
                 <ActionButton
                   color="primary"
+                  className={classes.customerBlock}
                   Icon={blocked ? AuthorizeIcon : BlockIcon}
                   InverseIcon={
                     blocked ? AuthorizeReversedIcon : BlockReversedIcon
@@ -203,25 +224,60 @@ const CustomerProfile = memo(() => {
                   }>
                   {`${blocked ? 'Authorize' : 'Block'} customer`}
                 </ActionButton>
+                <ActionButton
+                  color="primary"
+                  Icon={blocked ? AuthorizeIcon : BlockIcon}
+                  InverseIcon={
+                    blocked ? AuthorizeReversedIcon : BlockReversedIcon
+                  }
+                  onClick={() =>
+                    setCustomer({
+                      variables: {
+                        customerId,
+                        customerInput: {
+                          subscriberInfo: true
+                        }
+                      }
+                    })
+                  }>
+                  {`Retrieve information`}
+                </ActionButton>
               </div>
             </div>
           )}
-        </Box>
+        </div>
+        <div className={classes.rightSidePanel}>
+          {isOverview && (
+            <div>
+              <Box
+                className={classes.customerDetails}
+                display="flex"
+                justifyContent="space-between">
+                <CustomerDetails
+                  customer={customerData}
+                  locale={locale}
+                  setShowCompliance={() => setShowCompliance(!showCompliance)}
+                />
+              </Box>
+              <div>
+                <TransactionsList
+                  customer={customerData}
+                  data={sortedTransactions}
+                  locale={locale}
+                  loading={loading}
+                />
+              </div>
+            </div>
+          )}
+          {isCustomerData && (
+            <div>
+              <CustomerData
+                customer={customerData}
+                updateCustomer={updateCustomer}></CustomerData>
+            </div>
+          )}
+        </div>
       </div>
-      {!showCompliance && (
-        <TransactionsList
-          customer={customerData}
-          data={sortedTransactions}
-          locale={locale}
-          loading={loading}
-        />
-      )}
-      {showCompliance && (
-        <ComplianceDetails
-          customer={customerData}
-          updateCustomer={updateCustomer}
-        />
-      )}
     </>
   )
 })

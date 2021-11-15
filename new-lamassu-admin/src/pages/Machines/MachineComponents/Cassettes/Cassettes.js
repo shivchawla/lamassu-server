@@ -57,11 +57,12 @@ const SET_CASSETTE_BILLS = gql`
 `
 
 const CashCassettes = ({ machine, config, refetchData }) => {
-  const data = { machine, config }
   const classes = useStyles()
 
-  const cashout = data?.config && fromNamespace('cashOut')(data.config)
-  const locale = data?.config && fromNamespace('locale')(data.config)
+  const cashout = config && fromNamespace('cashOut')(config)
+  const locale = config && fromNamespace('locale')(config)
+  const fillingPercentageSettings =
+    config && fromNamespace('notifications', config)
   const fiatCurrency = locale?.fiatCurrency
 
   const getCashoutSettings = deviceId => fromNamespace(deviceId)(cashout)
@@ -73,7 +74,7 @@ const CashCassettes = ({ machine, config, refetchData }) => {
       name: 'cashbox',
       header: 'Cashbox',
       width: 240,
-      stripe: true,
+      stripe: false,
       view: value => (
         <CashIn currency={{ code: fiatCurrency }} notes={value} total={0} />
       ),
@@ -90,9 +91,10 @@ const CashCassettes = ({ machine, config, refetchData }) => {
       view: (value, { deviceId }) => (
         <CashOut
           className={classes.cashbox}
-          denomination={getCashoutSettings(deviceId)?.bottom}
+          denomination={getCashoutSettings(deviceId)?.top}
           currency={{ code: fiatCurrency }}
           notes={value}
+          threshold={fillingPercentageSettings.fillingPercentageCassette1}
         />
       ),
       input: NumberInput,
@@ -109,9 +111,10 @@ const CashCassettes = ({ machine, config, refetchData }) => {
         return (
           <CashOut
             className={classes.cashbox}
-            denomination={getCashoutSettings(deviceId)?.top}
+            denomination={getCashoutSettings(deviceId)?.bottom}
             currency={{ code: fiatCurrency }}
             notes={value}
+            threshold={fillingPercentageSettings.fillingPercentageCassette2}
           />
         )
       },
@@ -145,7 +148,6 @@ const CashCassettes = ({ machine, config, refetchData }) => {
       disableRowEdit={isCashOutDisabled}
       name="cashboxes"
       elements={elements}
-      enableEdit
       data={[machine] || []}
       save={onSave}
       validationSchema={ValidationSchema}

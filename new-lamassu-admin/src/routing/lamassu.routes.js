@@ -1,12 +1,14 @@
 import React from 'react'
 import { Redirect } from 'react-router-dom'
 
+import Analytics from 'src/pages/Analytics/Analytics'
 import Blacklist from 'src/pages/Blacklist'
 import Cashout from 'src/pages/Cashout'
 import Commissions from 'src/pages/Commissions'
 import { Customers, CustomerProfile } from 'src/pages/Customers'
 import Funding from 'src/pages/Funding'
 import Locales from 'src/pages/Locales'
+import IndividualDiscounts from 'src/pages/LoyaltyPanel/IndividualDiscounts'
 import PromoCodes from 'src/pages/LoyaltyPanel/PromoCodes'
 import MachineLogs from 'src/pages/MachineLogs'
 import CashCassettes from 'src/pages/Maintenance/CashCassettes'
@@ -80,6 +82,13 @@ const getLamassuRoutes = () => [
         component: ServerLogs
       }
     ]
+  },
+  {
+    key: 'analytics',
+    label: 'Analytics',
+    route: '/analytics',
+    allowedRoles: [ROLES.USER, ROLES.SUPERUSER],
+    component: Analytics
   },
   {
     key: 'settings',
@@ -212,11 +221,37 @@ const getLamassuRoutes = () => [
         component: Blacklist
       },
       {
-        key: 'promo-codes',
-        label: 'Promo Codes',
-        route: '/compliance/loyalty/codes',
+        key: 'loyalty',
+        label: 'Loyalty',
+        route: '/compliance/loyalty',
+        title: 'Loyalty Panel',
         allowedRoles: [ROLES.USER, ROLES.SUPERUSER],
-        component: PromoCodes
+        get component() {
+          return () => (
+            <Redirect
+              to={{
+                pathname: this.children[0].route,
+                state: { prev: this.state?.prev }
+              }}
+            />
+          )
+        },
+        children: [
+          {
+            key: 'individual-discounts',
+            label: 'Individual Discounts',
+            route: '/compliance/loyalty/individual-discounts',
+            allowedRoles: [ROLES.USER, ROLES.SUPERUSER],
+            component: IndividualDiscounts
+          },
+          {
+            key: 'promo-codes',
+            label: 'Promo Codes',
+            route: '/compliance/loyalty/codes',
+            allowedRoles: [ROLES.USER, ROLES.SUPERUSER],
+            component: PromoCodes
+          }
+        ]
       },
       {
         key: 'customer',

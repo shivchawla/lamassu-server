@@ -2,7 +2,8 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  makeStyles
+  makeStyles,
+  InputLabel
 } from '@material-ui/core'
 import React, { memo, useState } from 'react'
 
@@ -63,7 +64,7 @@ export const ConfirmDialog = memo(
     message,
     confirmationMessage = `Write '${toBeConfirmed}' to confirm this action`,
     onConfirmed,
-    onDissmised,
+    onDismissed,
     initialValue = '',
     disabled = false,
     ...props
@@ -76,7 +77,7 @@ export const ConfirmDialog = memo(
     const innerOnClose = () => {
       setValue('')
       setError(false)
-      onDissmised()
+      onDismissed()
     }
 
     const isOnErrorState =
@@ -101,9 +102,9 @@ export const ConfirmDialog = memo(
         )}
         <DialogContent className={classes.dialogContent}>
           {message && <P>{message}</P>}
+          <InputLabel htmlFor="confirm-input">{confirmationMessage}</InputLabel>
           <TextInput
             disabled={disabled}
-            label={confirmationMessage}
             name="confirm-input"
             autoFocus
             id="confirm-input"

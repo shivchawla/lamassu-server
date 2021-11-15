@@ -4,7 +4,6 @@ import * as R from 'ramda'
 import React from 'react'
 
 import { MainStatus } from 'src/components/Status'
-import TitleSection from 'src/components/layout/TitleSection'
 import DataTable from 'src/components/tables/DataTable'
 import { ReactComponent as TxInIcon } from 'src/styling/icons/direction/cash-in.svg'
 import { ReactComponent as TxOutIcon } from 'src/styling/icons/direction/cash-out.svg'
@@ -21,36 +20,36 @@ const CustomersList = ({ data, locale, onClick, loading }) => {
   const elements = [
     {
       header: 'Phone',
-      width: 172,
+      width: 175,
       view: it => getFormattedPhone(it.phone, locale.country)
     },
     {
       header: 'Name',
-      width: 241,
+      width: 247,
       view: getName
     },
     {
       header: 'Total TXs',
-      width: 126,
+      width: 130,
       textAlign: 'right',
       view: it => `${Number.parseInt(it.totalTxs)}`
     },
     {
       header: 'Total spent',
-      width: 152,
+      width: 155,
       textAlign: 'right',
       view: it =>
         `${Number.parseFloat(it.totalSpent)} ${it.lastTxFiatCode ?? ''}`
     },
     {
       header: 'Last active',
-      width: 133,
+      width: 137,
       view: it =>
         ifNotNull(it.lastActive, moment.utc(it.lastActive).format('YYYY-MM-D'))
     },
     {
       header: 'Last transaction',
-      width: 161,
+      width: 165,
       textAlign: 'right',
       view: it => {
         const hasLastTx = !R.isNil(it.lastTxFiatCode)
@@ -67,20 +66,13 @@ const CustomersList = ({ data, locale, onClick, loading }) => {
     },
     {
       header: 'Status',
-      width: 188,
+      width: 191,
       view: it => <MainStatus statuses={[getAuthorizedStatus(it)]} />
     }
   ]
 
   return (
     <>
-      <TitleSection
-        title="Customers"
-        labels={[
-          { label: 'Cash-in', icon: <TxInIcon /> },
-          { label: 'Cash-out', icon: <TxOutIcon /> }
-        ]}
-      />
       <DataTable
         loading={loading}
         emptyText="No customers so far"

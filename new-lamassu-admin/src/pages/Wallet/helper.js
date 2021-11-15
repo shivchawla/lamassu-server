@@ -28,6 +28,48 @@ const WalletSchema = Yup.object().shape({
     .transform(transformNumber)
 })
 
+const AdvancedWalletSchema = Yup.object().shape({
+  cryptoUnits: Yup.string().required()
+})
+
+const getAdvancedWalletElements = (cryptoCurrencies, coinUtils) => {
+  const viewCryptoCurrency = it =>
+    R.compose(
+      R.prop(['display']),
+      R.find(R.propEq('code', it))
+    )(cryptoCurrencies)
+
+  const getOptions = R.curry((coinUtils, it) => {
+    const options = R.keys(coinUtils.getCryptoCurrency(it.id).units)
+    return R.map(option => {
+      return { code: option, display: option }
+    })(options)
+  })
+
+  return [
+    {
+      name: 'id',
+      header: 'Cryptocurrency',
+      width: 180,
+      view: viewCryptoCurrency,
+      size: 'sm',
+      editable: false
+    },
+    {
+      name: 'cryptoUnits',
+      size: 'sm',
+      stripe: true,
+      width: 190,
+      input: Autocomplete,
+      inputProps: {
+        options: getOptions(coinUtils),
+        valueProp: 'code',
+        labelProp: 'display'
+      }
+    }
+  ]
+}
+
 const getElements = (cryptoCurrencies, accounts, onChange, wizard = false) => {
   const widthAdjust = wizard ? 11 : 0
   const viewCryptoCurrency = it => {
@@ -104,11 +146,12 @@ const getElements = (cryptoCurrencies, accounts, onChange, wizard = false) => {
     },
     {
       name: 'zeroConf',
+      header: 'Confidence Checking',
       size: 'sm',
       stripe: true,
       view: getDisplayName('zeroConf'),
       input: Autocomplete,
-      width: 190 - widthAdjust,
+      width: 220 - widthAdjust,
       inputProps: {
         options: getOptions('zeroConf'),
         valueProp: 'code',
@@ -133,4 +176,10 @@ const getElements = (cryptoCurrencies, accounts, onChange, wizard = false) => {
   ]
 }
 
-export { WalletSchema, getElements, filterClass }
+export {
+  WalletSchema,
+  AdvancedWalletSchema,
+  getElements,
+  filterClass,
+  getAdvancedWalletElements
+}

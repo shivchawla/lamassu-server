@@ -7,24 +7,21 @@ import * as R from 'ramda'
 import React, { useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import Chip from 'src/components/Chip'
 import LogsDowloaderPopover from 'src/components/LogsDownloaderPopper'
 import SearchBox from 'src/components/SearchBox'
+import SearchFilter from 'src/components/SearchFilter'
 import Title from 'src/components/Title'
 import DataTable from 'src/components/tables/DataTable'
-import { P } from 'src/components/typography'
-import { ReactComponent as CloseIcon } from 'src/styling/icons/action/close/zodiac.svg'
 import { ReactComponent as TxInIcon } from 'src/styling/icons/direction/cash-in.svg'
 import { ReactComponent as TxOutIcon } from 'src/styling/icons/direction/cash-out.svg'
 import { ReactComponent as CustomerLinkIcon } from 'src/styling/icons/month arrows/right.svg'
 import { formatDate } from 'src/utils/timezones'
 
 import DetailsRow from './DetailsCard'
-import { mainStyles, chipStyles } from './Transactions.styles'
+import { mainStyles } from './Transactions.styles'
 import { getStatus } from './helper'
 
 const useStyles = makeStyles(mainStyles)
-const useChipStyles = makeStyles(chipStyles)
 
 const NUM_LOG_RESULTS = 1000
 
@@ -36,12 +33,14 @@ const GET_DATA = gql`
 
 const GET_TRANSACTIONS_CSV = gql`
   query transactions(
+    $simplified: Boolean
     $limit: Int
-    $from: DateTime
-    $until: DateTime
+    $from: Date
+    $until: Date
     $timezone: String
   ) {
     transactionsCsv(
+      simplified: $simplified
       limit: $limit
       from: $from
       until: $until
@@ -62,8 +61,8 @@ const GET_TRANSACTION_FILTERS = gql`
 const GET_TRANSACTIONS = gql`
   query transactions(
     $limit: Int
-    $from: DateTime
-    $until: DateTime
+    $from: Date
+    $until: Date
     $txClass: String
     $machineName: String
     $customerName: String
@@ -118,29 +117,26 @@ const GET_TRANSACTIONS = gql`
 const Transactions = () => {
   const classes = useStyles()
   const history = useHistory()
-  const chipClasses = useChipStyles()
 
   const [filters, setFilters] = useState([])
   const { data: filtersResponse, loading: loadingFilters } = useQuery(
     GET_TRANSACTION_FILTERS
   )
-  const [filteredTransactions, setFilteredTransactions] = useState([])
   const [variables, setVariables] = useState({ limit: NUM_LOG_RESULTS })
   const {
-    data: txResponse,
+    data: txData,
     loading: loadingTransactions,
     refetch,
     startPolling,
     stopPolling
-  } = useQuery(GET_TRANSACTIONS, {
-    variables,
-    onCompleted: data => setFilteredTransactions(R.path(['transactions'])(data))
-  })
+  } = useQuery(GET_TRANSACTIONS, { variables })
 
   useEffect(() => {
     startPolling(10000)
     return stopPolling
   })
+
+  const txList = txData ? txData.transactions : []
 
   const { data: configResponse, configLoading } = useQuery(GET_DATA)
   const timezone = R.path(['config', 'locale_timezone'], configResponse)
@@ -198,13 +194,13 @@ const Transactions = () => {
     },
     {
       header: 'Crypto',
-      width: 144,
+      width: 150,
       textAlign: 'right',
       size: 'sm',
       view: it =>
-        `${coinUtils
-          .toUnit(new BigNumber(it.cryptoAtoms), it.cryptoCode)
-          .toFormat(5)} ${it.cryptoCode}`
+        `${coinUtils.toUnit(new BigNumber(it.cryptoAtoms), it.cryptoCode)} ${
+          it.cryptoCode
+        }`
     },
     {
       header: 'Address',
@@ -275,57 +271,44 @@ const Transactions = () => {
               onChange={onFilterChange}
             />
           </div>
-          {txResponse && (
+          {txList && (
             <div className={classes.buttonsWrapper}>
               <LogsDowloaderPopover
                 title="Download logs"
                 name="transactions"
                 query={GET_TRANSACTIONS_CSV}
-                args={{ timezone }}
                 getLogs={logs => R.path(['transactionsCsv'])(logs)}
+                simplified
                 timezone={timezone}
+                args={{ timezone }}
               />
             </div>
           )}
         </div>
         <div className={classes.headerLabels}>
           <div>
-            <TxOutIcon />
-            <span>Cash-out</span>
-          </div>
-          <div>
             <TxInIcon />
             <span>Cash-in</span>
+          </div>
+          <div>
+            <TxOutIcon />
+            <span>Cash-out</span>
           </div>
         </div>
       </div>
       {filters.length > 0 && (
-        <>
-          <P className={classes.text}>{'Filters:'}</P>
-          <div>
-            {filters.map((f, idx) => (
-              <Chip
-                key={idx}
-                classes={chipClasses}
-                label={`${f.type}: ${f.value}`}
-                onDelete={() => onFilterDelete(f)}
-                deleteIcon={<CloseIcon className={classes.button} />}
-              />
-            ))}
-            <Chip
-              classes={chipClasses}
-              label={`Delete filters`}
-              onDelete={() => setFilters([])}
-              deleteIcon={<CloseIcon className={classes.button} />}
-            />
-          </div>
-        </>
+        <SearchFilter
+          entries={filteredTransactions.length}
+          filters={filters}
+          onFilterDelete={onFilterDelete}
+          setFilters={setFilters}
+        />
       )}
       <DataTable
         loading={loadingTransactions && configLoading}
         emptyText="No transactions so far"
         elements={elements}
-        data={filteredTransactions}
+        data={txList}
         Details={DetailsRow}
         expandable
         rowSize="sm"
